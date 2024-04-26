@@ -1,0 +1,136 @@
+version: "3.8"
+
+services:
+  # dev workspace
+  jupyter:
+    # platform: linux/x86_64 # for others (mostly) or can just remove this line
+    platform: linux/x86_64 # for Mac M1
+    container_name: jupyter
+    build:
+      context: ./services/jupyter
+      dockerfile: Dockerfile
+      args:
+        NB_USER: ${JUPYTER_USER}
+        NB_PWD: 123456789
+        NB_UID: 1412
+        CONDA_DIR: /opt/anaconda3
+        ARCH: x86_64 # aarch64 for Mac M1 | x86_64 for others (mostly)
+        JUPYTER_PORT: ${JUPYTER_PORT}
+        MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+        CENTRAL_STORAGE_PATH: /home/${JUPYTER_USER}/central_storage
+        MAIN_CONDA_ENV_NAME: jang
+    env_file:
+      - .env
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:${MLFLOW_PORT}
+      - PREFECT_API_URL=http://prefect:${PREFECT_PORT}/api
+      - CENTRAL_STORAGE_PATH=/home/${JUPYTER_USER}/central_storage
+      - DB_CONNECTION_URL=postgresql://dlservice_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/dlservice_pg_db
+      - DB_PREDICTION_TABLE_NAME=predictions
+      - DB_API_LOG_TABLE_NAME=api_log
+    networks:
+      - mlops_network
+    ports:
+      - "${JUPYTER_PORT}:${JUPYTER_PORT}"
+    volumes:
+      - ./:/home/${JUPYTER_USER}/workspace/
+      - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+      - central_storage:/home/${JUPYTER_USER}/central_storage
+      - evidently_data:/home/${JUPYTER_USER}/workspace/deployments/evidently_workspaces
+    depends_on:
+      - mlflow
+      - prefect
+
+  # ML platform / experiment tracking
+  mlflow:
+    platform: linux/x86_64
+    container_name: mlflow
+    restart: always
+    build:
+      context: ./services/mlflow
+      dockerfile: Dockerfile
+      args:
+        MLFLOW_PORT: ${MLFLOW_PORT}
+    env_file:
+      - .env
+    environment:
+      - BACKEND_STORE_URI=postgresql://mlflow_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/mlflow_pg_db
+    networks:
+      - mlops_network
+    ports:
+      - "${MLFLOW_PORT}:${MLFLOW_PORT}"
+    volumes:
+      - mlflow_data:${MLFLOW_ARTIFACT_ROOT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # orchestrator
+  prefect:
+    platform: linux/x86_64
+    container_name: prefect
+    restart: always
+    build:
+      context: ./services/prefect
+      dockerfile: Dockerfile
+      args:
+        PREFECT_PORT: ${PREFECT_PORT}
+    env_file:
+      - .env
+    environment:
+      - PREFECT_API_URL=http://127.0.0.1:${PREFECT_PORT}/api
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://prefect_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/prefect_pg_db
+    networks:
+      - mlops_network
+    ports:
+      - "${PREFECT_PORT}:${PREFECT_PORT}"
+    volumes:
+      - prefect_data:${PREFECT_LOCAL_STORAGE_PATH}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # healthcheck can't access env variable at compose level
+      # so, $$ to tell compose not to parse this variable and it
+      # will be substituted with an actual env variable at runtime
+      test: ["CMD-SHELL", "curl $${PREFECT_API_URL}/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # sql database
+  postgres:
+    platform: linux/x86_64
+    container_name: postgres
+    image: postgres:15.3
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    networks:
+      - mlops_network
+    volumes:
+      - ./services/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  mlops_network:
+    driver: "bridge"
+  backend_network:
+    driver: "bridge"
+
+volumes:
+  mlflow_data:
+  prefect_data:
+  pgadmin_data:
+  grafana_data:
+  prometheus_data:
+  pgdata:
+  evidently_data:
+  central_storage:
