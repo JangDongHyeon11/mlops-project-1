@@ -42,7 +42,7 @@ def train_flow(cfg: Dict[str, Any]):
 
 
     # data validation before using
-    report_path = f"files/{ds_cfg['ds_name']}_{ds_cfg['dvc_tag']}_validation.html" # this must be .html
+    report_path = f"{ds_cfg['ds_root']}/{ds_cfg['ds_name']}_{ds_cfg['dvc_tag']}_validation.html" # this must be .html
     validate_data(ds_repo_path, img_ext = 'jpeg', save_path=report_path)
     
     mlflow.set_experiment(mlflow_train_cfg["exp_name"])

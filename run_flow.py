@@ -14,6 +14,6 @@ with open(args.config, 'r') as f:
     else:
         config = json.load(f)
 print(config)
-# flow_module = import_module(config['flow_module'])
+flow_module = import_module(config['flow_module'])
 
-# flow_module.start(config)
+flow_module.start(config)
