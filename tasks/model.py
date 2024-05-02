@@ -69,7 +69,7 @@ def save_model(model: tf.keras.models.Model, model_cfg: Dict[str, Union[str, Lis
     model_dir = os.path.join(model_cfg['save_dir'], model_cfg['model_name'])
     if not os.path.exists(model_cfg['save_dir']):
         logger.info(f"save_dir {model_cfg['save_dir']} does not exist. Created.")
-        os.path.makedirs(model_cfg['save_dir'])
+        os.makedirs(model_cfg['save_dir'])
     model.save(model_dir)
     logger.info(f'Model is saved to {model_dir}')
 

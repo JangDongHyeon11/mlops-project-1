@@ -4,7 +4,7 @@ services:
   # dev workspace
   jupyter:
     # platform: linux/x86_64 # for others (mostly) or can just remove this line
-    platform: linux/x86_64 # for Mac M1
+    platform: linux/arm64 # for Mac M1
     container_name: jupyter
     build:
       context: ./services/jupyter
@@ -14,7 +14,7 @@ services:
         NB_PWD: 123456789
         NB_UID: 1412
         CONDA_DIR: /opt/anaconda3
-        ARCH: x86_64 # aarch64 for Mac M1 | x86_64 for others (mostly)
+        ARCH: aarch64 # aarch64 for Mac M1 | x86_64 for others (mostly)
         JUPYTER_PORT: ${JUPYTER_PORT}
         MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
         CENTRAL_STORAGE_PATH: /home/${JUPYTER_USER}/central_storage
@@ -43,7 +43,7 @@ services:
 
   # ML platform / experiment tracking
   mlflow:
-    platform: linux/x86_64
+    platform: linux/arm64
     container_name: mlflow
     restart: always
     build:
@@ -67,7 +67,7 @@ services:
 
   # orchestrator
   prefect:
-    platform: linux/x86_64
+    platform: linux/arm64
     container_name: prefect
     restart: always
     build:
@@ -98,9 +98,62 @@ services:
       timeout: 5s
       retries: 5
 
+  # worker / agent / automation
+  prefect_worker:
+    platform: linux/arm64
+    container_name: prefect_worker
+    build:
+      context: ./services/prefect_worker
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - PREFECT_API_URL=http://prefect:${PREFECT_PORT}/api
+      - EVIDENTLY_URL=http://evidently:${EVIDENTLY_PORT}
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://prefect_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/prefect_pg_db
+      - DB_CONNECTION_URL=postgresql://dlservice_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/dlservice_pg_db
+      - CENTRAL_STORAGE_PATH=/service/central_storage
+    networks:
+      - mlops_network
+    volumes:
+      - central_storage:/service/central_storage
+    depends_on:
+      prefect:
+        condition: service_healthy
+
+  # model deployment / model service
+  dl_service:
+    platform: linux/x86_64
+    container_name: dl_service
+    restart: always
+    build:
+      context: ./services/dl_service
+      dockerfile: Dockerfile
+      args:
+        DL_SERVICE_PORT: ${DL_SERVICE_PORT}
+    env_file:
+      - .env
+    environment:
+      - CENTRAL_STORAGE_PATH=/service/central_storage
+      - DB_CONNECTION_URL=postgresql://dlservice_user:SuperSecurePwdHere@postgres:${POSTGRES_PORT}/dlservice_pg_db
+    networks:
+      - mlops_network
+    volumes:
+      - central_storage:/service/central_storage
+      - ./services/dl_service/app/:/service/app/
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl http://127.0.0.1:$${DL_SERVICE_PORT}/health_check"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # sql database
   postgres:
-    platform: linux/x86_64
+    platform: linux/arm64
     container_name: postgres
     image: postgres:15.3
     restart: always

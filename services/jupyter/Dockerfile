@@ -109,9 +109,15 @@ RUN conda init bash && \
     # at this stage, we are not root, so it can cause permission error. the next line's served to prevent this
     conda clean --all --force-pkgs-dirs && \
     conda create -n ${MAIN_CONDA_ENV_NAME} python=3.9
-#conda run -n ${MAIN_CONDA_ENV_NAME} pip install -r requirements.txt && 
+
+
+RUN conda install --yes --name ${MAIN_CONDA_ENV_NAME} h5py
+RUN conda run --name ${MAIN_CONDA_ENV_NAME} pip install -r requirements.txt
+
 RUN conda run -n ${MAIN_CONDA_ENV_NAME} pip install jupyter -U && \
     conda run -n ${MAIN_CONDA_ENV_NAME} ipython kernel install --name ${MAIN_CONDA_ENV_NAME} --user
+
+
 
 RUN sudo mkdir -m 777 -p ./workspace/docker_workspace ./workspace/Python-Practices
 

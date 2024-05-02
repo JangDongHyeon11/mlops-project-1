@@ -10,9 +10,17 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Update pip
+RUN pip install --upgrade pip
+
+# Install HDF5 using apt
+RUN apt-get update && apt-get install -y libhdf5-dev
+
+
 WORKDIR /service
 
 COPY requirements.txt .
+
 
 RUN pip install -r requirements.txt
 

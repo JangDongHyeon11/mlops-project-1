@@ -68,7 +68,7 @@ def save_and_upload_ref_data(ref_data_df: pd.DataFrame, remote_dir: str,
     save_file_path = os.path.join(model_cfg['save_dir'], save_file_name)
     if not os.path.exists(model_cfg['save_dir']):
         logger.info(f"save_dir {model_cfg['save_dir']} does not exist. Created.")
-        os.path.makedirs(model_cfg['save_dir'])
+        os.makedirs(model_cfg['save_dir'])
     ref_data_df.to_parquet(save_file_path)
     logger.info(f'Saved ref_data in {save_file_path}')
     
@@ -108,7 +108,7 @@ def save_and_upload_drift_detectors(uae_model: tf.keras.models.Model, bbsd_model
     uae_model_dir = os.path.join(model_cfg['save_dir'], model_cfg['model_name'] + model_cfg['drift_detection']['uae_model_suffix'])
     if not os.path.exists(model_cfg['save_dir']):
         logger.info(f"save_dir {model_cfg['save_dir']} does not exist. Created.")
-        os.path.makedirs(model_cfg['save_dir'])
+        os.makedirs(model_cfg['save_dir'])
     uae_model.save(uae_model_dir)
     logger.info(f"Untrained AutoEncoder (UAE) model for {model_cfg['model_name']} is saved to {uae_model_dir}")
 
