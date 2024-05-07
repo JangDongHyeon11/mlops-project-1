@@ -35,7 +35,7 @@ def build_figure_from_df(df: pd.DataFrame):
     ax.axis('off')
     table = pd.plotting.table(ax, df, loc='center', cellLoc='center')  # where df is your data frame
     plt.show()
-    return fig, tabl
+    return fig, table
 
 @task(name='upload_model')
 def upload_model(model_dir: str, metadata_file_path: str, remote_dir: str):

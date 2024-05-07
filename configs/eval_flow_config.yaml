@@ -8,8 +8,8 @@ dataset:
     
 evaluate:
     subset: test
-    model_dir: /home/Jang/central_storage/models/animals10_classifier_75px_trial1/
-    model_metadata_file_path: /home/Jang/central_storage/models/animals10_classifier_75px_trial1.yaml
+    model_dir: /home/Jang/central_storage/models/animals10_classifier_50px_trial7/
+    model_metadata_file_path: /home/Jang/central_storage/models/animals10_classifier_50px_trial7.yaml
     mlflow:
         exp_name: Evaluate Animals10 classifier
         exp_desc: Evaluate a classifier model

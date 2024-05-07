@@ -98,6 +98,63 @@ services:
       timeout: 5s
       retries: 5
 
+  # ui for model service
+  web_ui:
+    platform: linux/arm64
+    container_name: web_ui
+    build:
+      context: ./services/web_ui
+      dockerfile: Dockerfile
+      args:
+        WEB_UI_PORT: ${WEB_UI_PORT}
+    env_file:
+      - .env
+    environment:
+      - PREDICT_ENDPOINT=http://nginx:${NGINX_PORT}/predict/
+    networks:
+      - mlops_network
+    ports:
+      - "${WEB_UI_PORT}:${WEB_UI_PORT}"
+    volumes:
+      - ./services/web_ui/app/:/service/app/
+    depends_on:
+      dl_service:
+        condition: service_healthy
+
+  # model monitoring
+  evidently:
+    platform: linux/arm64
+    container_name: evidently
+    build:
+      context: ./services/evidently
+      dockerfile: Dockerfile
+      args:
+        EVIDENTLY_PORT: ${EVIDENTLY_PORT}
+    env_file:
+      - .env
+    networks:
+      - mlops_network
+    ports:
+      - "${EVIDENTLY_PORT}:${EVIDENTLY_PORT}"
+    volumes:
+      - evidently_data:/service/${EVIDENTLY_WORKSPACE_NAME}
+
+  # reverse proxy
+  nginx:
+    platform: linux/arm64
+    container_name: nginx
+    restart: always
+    build:
+      context: ./services/nginx
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    networks:
+      - mlops_network
+    depends_on:
+      dl_service:
+        condition: service_healthy
+
   # worker / agent / automation
   prefect_worker:
     platform: linux/arm64
@@ -171,6 +228,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # ui for database
+  pgadmin:
+    platform: linux/arm64
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecurePwdHere
+    networks:
+      - mlops_network
+    ports:
+      - "16543:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 networks:
   mlops_network:
