@@ -1,5 +1,4 @@
-# credit: https://pyimagesearch.com/2020/03/09/grad-cam-visualize-class-activation-maps-with-keras-tensorflow-and-deep-learning/
-# import the necessary packages
+
 from tensorflow.keras.models import Model
 import tensorflow as tf
 import numpy as np

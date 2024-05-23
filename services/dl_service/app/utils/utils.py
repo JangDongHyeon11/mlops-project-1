@@ -14,8 +14,8 @@ CENTRAL_STORAGE_PATH = os.getenv("CENTRAL_STORAGE_PATH", "/home/Jang/central_mod
 
 logger = logging.getLogger('main')
 
-# the best practice is to retrieve the model & config from a model registry service
-# and this function will implement the logic to download files to local storage and read them
+# 좋은 방법은 모델 레지스트리 서비스에서 모델 & 구성을 검색
+# 여기서의 기능은 로컬 스토리지에 파일을 다운로드하고 읽는 로직을 구현합니다
 def retrieve_metadata_file(model_metadata_file_path: str):
     model_meta_path = os.path.join(CENTRAL_STORAGE_PATH, 'models', model_metadata_file_path)
     logger.info(f'Loading the model metadata from {model_meta_path}')
@@ -35,7 +35,7 @@ def load_drift_detectors(model_metadata_file_path: str):
     metadata = retrieve_metadata_file(model_metadata_file_path)
     drift_cfg = metadata['drift_detection']
     uae_dir = os.path.join(CENTRAL_STORAGE_PATH, 'models', metadata['model_name'] + drift_cfg['uae_model_suffix'])
-    bbsd_dir = os.path.join(CENTRAL_STORAGE_PATH, 'models', metadata['model_name'] + drift_cfg['uae_model_suffix'])
+    bbsd_dir = os.path.join(CENTRAL_STORAGE_PATH, 'models', metadata['model_name'] + drift_cfg['bbsd_model_suffix'])
     logger.info(f'Loading the UAE model from {uae_dir}')
     uae = load_model(uae_dir)
     logger.info('Loaded UAE model successfully')
@@ -49,13 +49,13 @@ def array_to_encoded_str(image: np.ndarray):
     img_buffer = BytesIO()
     pil_img.save(img_buffer, format='PNG', optimize = True)
     byte_data = img_buffer.getvalue()
-    # note: compare to base64.b64encode(byte_data).decode('utf-8')
+    # compare to base64.b64encode(byte_data).decode('utf-8')
     img_str = base64.encodebytes(byte_data).decode("utf-8")
     return img_str
 
 
 def process_heatmap(heatmap: np.ndarray):
-    # process heatmap: blur & thr for a more elegant heatmap
+   
     out_heatmap = heatmap.copy()
     # thresholding
     thr = 0.05 * 255

@@ -21,7 +21,7 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_auc_sco
 from .utils.tf_data_utils import build_data_pipeline
 from .utils.callbacks import MLflowLog
 
-def build_classification_report_df(y_true, y_pred, class_names):
+def build_model_report(y_true, y_pred, class_names):
     report = classification_report(y_true, y_pred, target_names=class_names, output_dict=True)
     return pd.DataFrame(report).T
 
@@ -87,12 +87,6 @@ def save_model(model: tf.keras.models.Model, model_cfg: Dict[str, Union[str, Lis
 def build_model(input_size: list, n_classes: int, classifier_activation: str = 'softmax',
                 classification_layer: str = 'classify'):
     logger = get_run_logger()
-    # backbone = ResNet50(include_top=False, weights='imagenet',
-    #                      input_shape = [input_size[0], input_size[1], 3])
-    # x = GlobalAveragePooling2D()(backbone.output)
-    # x = Dense(512, activation='relu')(x)
-    # x = Dense(256, activation='relu')(x)
-    # x = Dense(n_classes, activation=classifier_activation)(x)
 
     backbone = tf.keras.Sequential([
         tf.keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu', 
@@ -120,10 +114,12 @@ def train_model(model: tf.keras.models.Model, classes: List[str], ds_repo_path: 
                 init_lr: float, augmenter: iaa):
     logger = get_run_logger()
     logger.info('Building data pipelines')
+    
     train_ds = build_data_pipeline(annotation_df, classes, 'train', img_size, batch_size, 
                                    do_augment=True, augmenter=augmenter)
     valid_ds = build_data_pipeline(annotation_df, classes, 'valid', img_size, batch_size, 
                                    do_augment=False, augmenter=None)
+    
     # compile
     opt = Adam(learning_rate=init_lr)
     loss = CategoricalCrossentropy()
@@ -162,10 +158,10 @@ def evaluate_model(model: tf.keras.models.Model, classes: List[str], ds_repo_pat
         y_pred = (y_pred_prob > multilabel_thr).astype(np.int8)
 
     if classifier_type == 'multi-class':
-        # Create a confusion matrix
+        # confusion matrix 생성
         conf_matrix = confusion_matrix(y_true, y_pred)
         
-        # Plot the confusion matrix
+        # Plot the confusion matrix 
         conf_matrix_fig = plt.figure(figsize=(8, 6))
         sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", cbar=True,
                    xticklabels=classes, yticklabels=classes)
@@ -174,20 +170,20 @@ def evaluate_model(model: tf.keras.models.Model, classes: List[str], ds_repo_pat
         plt.title('Confusion Matrix')
         plt.show()
         
-        # Calculate AUC
+        #  AUC
         roc_auc = roc_auc_score(y_true, y_pred_prob, average='macro', multi_class='ovr')
         
-        # Print classification report
-        report = build_classification_report_df(y_true, y_pred, classes)
+        # classification report
+        report = build_model_report(y_true, y_pred, classes)
         
     elif classifier_type == 'multi-label':
         conf_matrix_fig = None
         roc_auc = roc_auc_score(y_true, y_pred_prob, average=None, multi_class='ovr')
         
-        # Print classification report
-        report = build_classification_report_df(y_true, y_pred, classes)
+        # classification report
+        report = build_model_report(y_true, y_pred, classes)
         report['AUC'] = list(roc_auc) + (4*[None])
-    logger.info('Logging outputs to MLflow to finish the process')
+    logger.info('프로세스를 완료하기 위해 MLflow에 출력 로깅')
     if conf_matrix_fig:
         mlflow.log_figure(conf_matrix_fig, 'confusion_matrix.png')
     if isinstance(roc_auc, float):
@@ -196,8 +192,8 @@ def evaluate_model(model: tf.keras.models.Model, classes: List[str], ds_repo_pat
     report = report.apply(lambda x: round(x, 5))
     report = report.reset_index()
     report_fig, _ = build_figure_from_df(report)
-    mlflow.log_figure(report_fig, 'classification_report.png')
-    mlflow.log_table(report, 'classification_report.json')
+    mlflow.log_figure(report_fig, 'model_report.png')
+    mlflow.log_table(report, 'model_report.json')
 
 
 

@@ -25,13 +25,13 @@ def eval_flow(cfg: Dict[str, Any], model_dir: str, metadata_file_path: str):
     trained_model = load_saved_model(model_dir)
     with open(metadata_file_path,'r') as f:
         model_cfg = yaml.safe_load(f)
-    # all across this script, input_shape will be used in tf which expects H x W
+ 
     input_shape = (model_cfg['input_size']['h'], model_cfg['input_size']['w'])
 
     # prepare dataset
     logger.info('Preparing dataset for evaluation...')
-    ds_repo_path, annotation_df = prepare_dataset(ds_root=ds_cfg['ds_root'], 
-                                                  ds_name=ds_cfg['ds_name'], 
+    ds_repo_path, annotation_df = prepare_dataset(dataset_root=ds_cfg['ds_root'], 
+                                                  dataset_name=ds_cfg['ds_name'], 
                                                   dvc_tag=ds_cfg['dvc_tag'], 
                                                   dvc_checkout=ds_cfg['dvc_checkout'])
 

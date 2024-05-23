@@ -39,6 +39,7 @@ def upload_image(request: Request, file: UploadFile):
 def call_api(request: Request):
     res = requests.post(PREDICT_ENDPOINT, files={'file':cached_img_file})
     res = res.json()
+    print(res)
     pred_result = res['prediction']
     # this will be a list of tuple('class': prob)
     sorted_pred = list(reversed(sorted(pred_result.items(), key=lambda x: x[1])))

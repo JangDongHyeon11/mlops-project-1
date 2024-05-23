@@ -22,12 +22,10 @@ from .utils import (open_db_session, get_cur_df_from_query, convert_pred_json_to
 POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
 EVIDENTLY_PORT = os.getenv('EVIDENTLY_PORT', '8000')
 EVIDENTLY_URL = os.getenv('EVIDENTLY_URL', f'http://evidently:{EVIDENTLY_PORT}')
-DB_CONNECTION_URL = os.getenv('DB_CONNECTION_URL', f'postgresql://dlservice_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/dlservice_pg_db')
+DB_CONNECTION_URL = os.getenv('DB_CONNECTION_URL', f'postgresql://dlservice_user:admin1234@postgres:{POSTGRES_PORT}/dlservice_pg_db')
 DB_PREDICTION_TABLE_NAME = os.getenv('DB_PREDICTION_TABLE_NAME', 'predictions')
 CENTRAL_STORAGE_PATH = os.getenv('CENTRAL_STORAGE_PATH', '/service/central_storage')
 
-# might have to create Prefect variables to store model_metadata.yml path
-# then reference those variables in prefect.yaml and pass in as parameters to this flow function
 @flow(name='detect_drift_with_evidently')
 def detect_drift_flow(model_metadata_file_path: str=variables.get('current_model_metadata_file'), 
                       last_days: Optional[int]=7, last_n: Optional[int]=500,

@@ -15,7 +15,7 @@ logger = logging.getLogger('main')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
 DB_PREDICTION_TABLE_NAME = os.getenv('DB_PREDICTION_TABLE_NAME', 'predictions')
 DB_API_LOG_TABLE_NAME = os.getenv('DB_API_LOG_TABLE_NAME', 'api_log')
-DB_CONNECTION_URL = os.getenv('DB_CONNECTION_URL', f'postgresql://dlservice_user:SuperSecurePwdHere@postgres:{POSTGRES_PORT}/dlservice_pg_db')
+DB_CONNECTION_URL = os.getenv('DB_CONNECTION_URL', f'postgresql://dlservice_user:admin1234@postgres:{POSTGRES_PORT}/dlservice_pg_db')
 
 required_db_tables = [DB_PREDICTION_TABLE_NAME, DB_API_LOG_TABLE_NAME]
 
@@ -58,6 +58,7 @@ def commit_results_to_db(request_obj: fastapi.Request, resp_code: int, resp_mess
     engine = create_engine(DB_CONNECTION_URL)
     session = open_db_session(engine)
     json_str = json.dumps(pred_json)
+
     prediction_record = PredictionsTable(model_name=model_name, input_img=input_img, raw_hm_img=raw_hm_img, 
                                          overlaid_img=overlaid_img, prediction_json=json_str, uae_feats=uae_feats,
                                          bbsd_feats=bbsd_feats)

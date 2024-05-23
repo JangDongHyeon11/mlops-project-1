@@ -20,7 +20,7 @@ augmenter = iaa.Sequential(augment_config, random_order=True)
 AUGMENTER = iaa.Sometimes(0.8, augmenter)
 
 def load_data(path, label, target_size):
-    # NOTE: normalization with /255 is done after augmentation cuz imgaug lib needs image to be uint8
+    #  normalization with /255 is done after augmentation cuz imgaug lib needs image to be uint8
     image = tf.io.read_file(path)
     image = tf.io.decode_png(image, channels=3)
     image = tf.image.resize(image, target_size)
@@ -33,10 +33,7 @@ def normalize(images, label):
     return result, label
 
 def augment(x, y, augmenter):
-    # imgaug require uint8 as input
     x = tf.cast(x, tf.uint8)
-    # augment_image for a single image
-    # augment_imageS for a batch of image
     x = tf.numpy_function(augmenter.augment_image,
                            [x],
                            x.dtype)

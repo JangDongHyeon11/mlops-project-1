@@ -1,4 +1,4 @@
-CREATE USER mlflow_user WITH PASSWORD 'SuperSecurePwdHere' CREATEDB;
+CREATE USER mlflow_user WITH PASSWORD 'admin1234' CREATEDB;
 CREATE DATABASE mlflow_pg_db
     WITH 
     OWNER = mlflow_user
@@ -8,7 +8,7 @@ CREATE DATABASE mlflow_pg_db
     TABLESPACE = pg_default
     CONNECTION LIMIT = -1;
 
-CREATE USER prefect_user WITH PASSWORD 'SuperSecurePwdHere' CREATEDB;
+CREATE USER prefect_user WITH PASSWORD 'admin1234' CREATEDB;
 CREATE DATABASE prefect_pg_db
     WITH 
     OWNER = prefect_user
@@ -18,7 +18,7 @@ CREATE DATABASE prefect_pg_db
     TABLESPACE = pg_default
     CONNECTION LIMIT = -1;
 
-CREATE USER dlservice_user WITH PASSWORD 'SuperSecurePwdHere' CREATEDB;
+CREATE USER dlservice_user WITH PASSWORD 'admin1234' CREATEDB;
 CREATE DATABASE dlservice_pg_db
     WITH 
     OWNER = dlservice_user

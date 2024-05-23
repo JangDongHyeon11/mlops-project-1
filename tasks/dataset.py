@@ -8,29 +8,29 @@ from prefect import task, get_run_logger
 from deepchecks.vision import classification_dataset_from_directory
 from deepchecks.vision.suites import train_test_validation
 
-@task(name='validate_data', log_prints=True)
-def validate_data(ds_repo_path: str, save_path: str = 'ds_val.html', img_ext: str = 'jpeg'):
+@task(name='validate_data')
+def validate_data(dataset_path: str, save_path: str = 'dataset_val.html', img_ext: str = 'jpeg'):
     logger = get_run_logger()
-    train_ds, test_ds = classification_dataset_from_directory(
-        root=os.path.join(ds_repo_path, 'images'), object_type='VisionData',
+    train_dataset, test_dataset = classification_dataset_from_directory(
+        root=os.path.join(dataset_path, 'images'), object_type='VisionData',
         image_extension=img_ext
     )
     suite = train_test_validation()
-    logger.info("Running data validation test sute")
-    result = suite.run(train_ds, test_ds)
-    result.save_as_html(save_path)
-    logger.info(f'Finish data validation and save report to {save_path}')
-    logger.info("This file will also be saved along with the MLflow's training task in the later step")
+    logger.info("데이터 검증 테스트 실행 중")
+    result_dataset = suite.run(train_dataset, test_dataset)
+    result_dataset.save_as_html(save_path)
+    logger.info(f'데이터 검증을 완료하고 보고서를 다음 위치에 저장합니다. {save_path}')
+    logger.info("이 파일은 이후 단계에서 MLflow의 학습 작업과 함께 저장됩니다.")
 
 
 @task(name='prepare_dvc_dataset')
-def prepare_dataset(ds_root: str, ds_name: str, dvc_tag: str, dvc_checkout: bool = True):
+def prepare_dataset(dataset_root: str, dataset_name: str, dvc_tag: str, dvc_checkout: bool = True):
     logger = get_run_logger()
-    logger.info("Dataset name: {} | DvC tag: {}".format(ds_name, dvc_tag))
-    ds_repo_path = os.path.join(ds_root, ds_name)
+    logger.info("데이터셋 name: {} | DvC tag: {}".format(dataset_name, dvc_tag))
+    dataset_path = os.path.join(dataset_root, dataset_name)
 
-    annotation_path = os.path.join(ds_repo_path, 'annotation_df.csv')
-    annotation_df = pd.read_csv(annotation_path)
+    at_path = os.path.join(dataset_path, 'annotation_df.csv')
+    at_df = pd.read_csv(at_path)
 
     # check dvc_checkout field
     # if yes -> do git checkout, dvc pull, append path
@@ -70,7 +70,7 @@ def prepare_dataset(ds_root: str, ds_name: str, dvc_tag: str, dvc_checkout: bool
     #     logger.warning(f'You set the dvc_checkout to false for {ds_name}. ' + \
     #             'The DvC will not check and pull the dataset repo, so please make sure they are correct.')
         
-    return ds_repo_path, annotation_df
+    return dataset_path, at_df
 
 
 

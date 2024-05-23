@@ -1,11 +1,12 @@
+from importlib import import_module
+
+import argparse
 import yaml
 import json
-import argparse
-from importlib import import_module
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str,
-                    help="path to a config file")
+                    help="config file 입력")
 args = parser.parse_args()
 
 with open(args.config, 'r') as f:
@@ -13,7 +14,7 @@ with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
     else:
         config = json.load(f)
-print(config)
-flow_module = import_module(config['flow_module'])
+        
+module = import_module(config['flow_module'])
 
-flow_module.start(config)
+module.start(config)

@@ -16,7 +16,6 @@ from utils import (GradCAM, tf_load_model, array_to_encoded_str, process_heatmap
                    commit_only_api_log_to_db, check_db_healthy)
 
 
-# define Pydantic models for type validation
 class Message(BaseModel):
     message: str
 
@@ -27,13 +26,12 @@ class PredictionResult(BaseModel):
     raw_hm_img: str
     message: str
 
-FORMAT = logging.Formatter(
+FORMATTER = logging.Formatter(
     '%(asctime)s | %(levelname)-8s | %(filename)s:%(lineno)-3d | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-print(f'Created logger with name {__name__}')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setFormatter(FORMAT)
+ch.setFormatter(FORMATTER)
 logger.addHandler(ch)
 
 app = FastAPI()
@@ -70,7 +68,7 @@ def update_model(request: Request, model_metadata_file_path: str, background_tas
     start_time = time.time()
     logger.info('Updating model')
     try:
-        # prepare drift detectors along with the model here
+        
         model, model_meta = tf_load_model(model_metadata_file_path)
         uae, bbsd = load_drift_detectors(model_metadata_file_path)
     except Exception as e:
@@ -128,10 +126,9 @@ async def predict(request: Request, file: UploadFile, background_tasks: Backgrou
     logger.info('Obtained prediction')
     
     logger.info('Extracting features with drift detectors')
-    # by default postgresql store array in 'double precision' which is equivalent to float64
+
     uae_feats = uae.predict(image)[0].astype(np.float64)
-    # if bbsd's already used the last layer meaning it has the same output as our main classifier
-    # so there is no need to predict again.
+
     if model_meta['drift_detection']['bbsd_layer_idx'] in (-1, len(model.layers)):
         bbsd_feats = pred.copy().astype(np.float64)
     else:
@@ -159,19 +156,25 @@ async def predict(request: Request, file: UploadFile, background_tasks: Backgrou
     (heatmap, overlaid_img) = cam.overlay_heatmap(heatmap, ori_image, alpha=0.2)
     logger.info('Finished overlaying heatmap')
     
- # format prediction
+    # format prediction
     pred_dict = dict(zip(model_meta['classes'], pred.tolist()))
     overlaid_str = array_to_encoded_str(overlaid_img)
     raw_hm_str = array_to_encoded_str(heatmap)
-    ori_img_str = array_to_encoded_str(ori_image) # this is used for logging only
+    ori_img_str = array_to_encoded_str(ori_image) 
     logger.info('SUCCESS')
-
+    # logger.info("#################################################")
+    # logger.info(raw_hm_str)
+    # logger.info(overlaid_str)
+    # logger.info(pred_dict)
+    # logger.info(uae_feats)
+    # logger.info(bbsd_feats)
+    # logger.info("#################################################")
     time_spent = round(time.time() - start_time, 4)
     resp_code = 200
     resp_message = "Success"
     background_tasks.add_task(commit_results_to_db, request, resp_code, resp_message, time_spent,
-                              model_meta['model_name'], ori_img_str, raw_hm_str, overlaid_str, pred_dict,
-                              uae_feats, bbsd_feats)
+                              model_meta['model_name'], ori_img_str, raw_hm_img=raw_hm_str, overlaid_img=overlaid_str,pred_json= pred_dict,
+                              uae_feats=uae_feats, bbsd_feats=bbsd_feats)
     
     return {'model_name': model_meta['model_name'], 'prediction': pred_dict, 'overlaid_img': overlaid_str, 'raw_hm_img': raw_hm_str, 'message': resp_message}
 
